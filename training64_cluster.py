@@ -93,21 +93,26 @@ class UNet(nn.Module):
         return logits
 
 def calculate_precision_recall_f1(preds, targets):
+    # Convert boolean tensors to float for calculations
+    preds = preds.float()
+    targets = targets.float()
+
     # Calculate True Positives (TP), False Positives (FP), and False Negatives (FN)
-    TP = (preds * targets).sum().float()
-    FP = ((logical_not(targets)) * preds).sum().float()
-    FN = (targets * (logical_not(preds))).sum().float()
+    TP = (preds * targets).sum()
+    FP = ((1 - targets) * preds).sum()
+    FN = (targets * (1 - preds)).sum()
 
     # Calculate Precision, Recall, and F1 score
-    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
-    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    precision = TP / (TP + FP) if TP + FP > 0 else 0
+    recall = TP / (TP + FN) if TP + FN > 0 else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
 
     return precision.item(), recall.item(), f1.item()
 
 
+
 def evaluate_model(model, dataloader, criterion, threshold=0.5):
-    print('------- Evaluation ----------')
+    print("------ Evaluation --------")
     model.eval()
     total_loss = 0
     total_precision = 0
@@ -122,12 +127,12 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 
             # Apply sigmoid function to ensure outputs are in the probability space
             probs = outputs.sigmoid()
-            preds = probs > threshold
+            preds = (probs > threshold).float()  # Cast to float to perform calculations
 
             loss = criterion(outputs, targets)
             total_loss += loss.item()
 
-            precision, recall, f1 = calculate_precision_recall_f1(preds, targets)
+            precision, recall, f1 = calculate_precision_recall_f1(preds, targets.float())
             total_precision += precision
             total_recall += recall
             total_f1 += f1
@@ -138,6 +143,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
     avg_f1 = total_f1 / num_batches
 
     return avg_loss, avg_precision, avg_recall, avg_f1
+
 
 
 # Initializing the WANDB
