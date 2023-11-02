@@ -127,8 +127,8 @@ test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
 
 print("Data is loaded ...")
 
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device = torch.device('cpu')
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cpu')
 
 print(device)
 
