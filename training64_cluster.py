@@ -5,6 +5,7 @@ from torchmetrics import Precision, Recall, F1Score
 from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 import os
 import glob
 import wandb
@@ -146,6 +147,43 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 
 
 
+def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
+    model.eval()
+    images, gt_masks, pred_masks = [], [], []
+    with torch.no_grad():
+        for i, (inputs, targets) in enumerate(dataloader):
+            if i >= num_samples:
+                break
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            preds = outputs.sigmoid() > 0.5
+
+            images.append(inputs.cpu())
+            gt_masks.append(targets.cpu())
+            pred_masks.append(preds.cpu())
+
+    for idx in range(num_samples):
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+        axs[0].imshow(images[idx].squeeze().permute(1, 2, 0))  # Assuming the input is Channels x Height x Width
+        axs[0].set_title('Input Image')
+        axs[0].axis('off')
+
+        axs[1].imshow(gt_masks[idx].squeeze(), cmap='gray')
+        axs[1].set_title('Ground Truth Mask')
+        axs[1].axis('off')
+
+        axs[2].imshow(pred_masks[idx].squeeze(), cmap='gray')
+        axs[2].set_title('Predicted Mask')
+        axs[2].axis('off')
+
+        plt.tight_layout()
+        fig.suptitle(f'Epoch {epoch} - Sample {idx + 1}', fontsize=16)
+        plt.subplots_adjust(top=0.88)
+
+        # Save the figure
+        plt.savefig(f'{save_dir}/epoch_{epoch}_sample_{idx + 1}.png')
+        plt.close()
+
 # Initializing the WANDB
 
 # wandb.init(
@@ -160,6 +198,10 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 # #     "epochs": 20,
 # #     }
 # )
+
+if not os.path.exists('comparison_figures'):
+    os.makedirs('comparison_figures')
+
 
 # Define transforms
 transform = transforms.Compose([
@@ -231,7 +273,9 @@ for epoch in range(num_epochs):
           f'Test Precision: {test_precision:}, Test Recall: {test_recall:}, Test F1: {test_f1:}')
 
     # Save model every 10 epochs
-    if (epoch + 1) % 10 == 0:
+    if (epoch + 1) % 1 == 0:
         torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
+        save_comparison_figures(model, test_loader, epoch + 1, device)
+        print(f'Model saved and comparison figures generated for Epoch {epoch + 1}.')
 
 print('Finished Training')
