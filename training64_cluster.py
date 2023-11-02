@@ -107,7 +107,7 @@ def calculate_precision_recall_f1(preds, targets):
     recall = TP / (TP + FN) if TP + FN > 0 else 0
     f1 = 2 * (precision * recall) / (precision + recall) if precision + recall > 0 else 0
 
-    return precision.item(), recall.item(), f1.item()
+    return precision.float(), recall.float(), f1.float()
 
 
 
