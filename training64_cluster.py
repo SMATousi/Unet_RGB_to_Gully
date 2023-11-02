@@ -212,7 +212,7 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item() * inputs.size(0)
 
-        # break
+        break
 
     train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion)
     test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion)
