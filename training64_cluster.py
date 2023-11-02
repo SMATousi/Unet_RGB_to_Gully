@@ -92,40 +92,52 @@ class UNet(nn.Module):
         logits = self.outc(x)
         return logits
 
+def calculate_precision_recall_f1(preds, targets):
+    # Calculate True Positives (TP), False Positives (FP), and False Negatives (FN)
+    TP = (preds * targets).sum().float()
+    FP = ((1 - targets) * preds).sum().float()
+    FN = (targets * (1 - preds)).sum().float()
+
+    # Calculate Precision, Recall, and F1 score
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    return precision.item(), recall.item(), f1.item()
+
 
 def evaluate_model(model, dataloader, criterion, threshold=0.5):
-    print("-------- Evaluation -----------")
+    print('------- Evaluation ----------')
     model.eval()
     total_loss = 0
-
-    # Define metrics
-    precision_metric = Precision(threshold=threshold).to(device)
-    recall_metric = Recall(threshold=threshold).to(device)
-    f1_metric = F1Score(threshold=threshold).to(device)
+    total_precision = 0
+    total_recall = 0
+    total_f1 = 0
+    num_batches = len(dataloader)
 
     with torch.no_grad():
         for inputs, targets in tqdm(dataloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
-            
-            # Convert outputs to binary mask
-            preds = outputs.sigmoid() > threshold  # Use sigmoid if the output is not a probability yet
 
-            # Calculate loss
+            # Apply sigmoid function to ensure outputs are in the probability space
+            probs = outputs.sigmoid()
+            preds = probs > threshold
+
             loss = criterion(outputs, targets)
-            total_loss += loss.item() * inputs.size(0)
+            total_loss += loss.item()
 
-            # Update metrics
-            precision_metric.update(preds.int(), targets.int())
-            recall_metric.update(preds.int(), targets.int())
-            f1_metric.update(preds.int(), targets.int())
+            precision, recall, f1 = calculate_precision_recall_f1(preds, targets)
+            total_precision += precision
+            total_recall += recall
+            total_f1 += f1
 
-    # Compute the metrics
-    precision = precision_metric.compute()
-    recall = recall_metric.compute()
-    f1_score = f1_metric.compute()
+    avg_loss = total_loss / num_batches
+    avg_precision = total_precision / num_batches
+    avg_recall = total_recall / num_batches
+    avg_f1 = total_f1 / num_batches
 
-    return total_loss / len(dataloader.dataset), precision.item(), recall.item(), f1_score.item()
+    return avg_loss, avg_precision, avg_recall, avg_f1
 
 
 # Initializing the WANDB
