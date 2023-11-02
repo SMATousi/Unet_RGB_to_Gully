@@ -6,6 +6,7 @@ from PIL import Image
 from tqdm import tqdm
 import os
 import glob
+import wandb
 
 class RGBStreamOrderDataset(Dataset):
     def __init__(self, input_dir, target_dir, transform=None):
@@ -92,16 +93,45 @@ class UNet(nn.Module):
 
 
 def evaluate_model(model, dataloader, criterion):
+    print("-------- Evaluation ---------")
     model.eval()
     total_loss = 0
+    correct_pixels = 0
+    total_pixels = 0
     with torch.no_grad():
-        for inputs, targets in dataloader:
+        for inputs, targets in tqdm(dataloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
+
+            # Assuming outputs are raw logits, apply a threshold or argmax to convert to binary or categorical mask
+            # e.g., preds = torch.argmax(outputs, dim=1) if your data is categorical
+            preds = outputs > 0.5 if outputs.shape[1] == 1 else torch.argmax(outputs, dim=1)  # binary or categorical
+
+            # Calculate loss
             loss = criterion(outputs, targets)
             total_loss += loss.item() * inputs.size(0)
-    return total_loss / len(dataloader.dataset)
 
+            # Calculate accuracy
+            correct_pixels += (preds == targets).sum().item()
+            total_pixels += targets.nelement()
+
+    accuracy = correct_pixels / total_pixels
+    return total_loss / len(dataloader.dataset), accuracy
+
+# Initializing the WANDB
+
+# wandb.init(
+#     # set the wandb project where this run will be logged
+#     project="Gully-detection-64-Unet", name="batch-4-TestRun"
+    
+#     # track hyperparameters and run metadata
+# #     config={
+# #     "learning_rate": 0.02,
+# #     "architecture": "CNN",
+# #     "dataset": "CIFAR-100",
+# #     "epochs": 20,
+# #     }
+# )
 
 # Define transforms
 transform = transforms.Compose([
@@ -143,6 +173,7 @@ print("Model is created ...")
 # Training loop
 num_epochs = 50
 for epoch in range(num_epochs):
+    print("--------- Training ------------")
     model.train()
     running_loss = 0.0
     for inputs, targets in tqdm(train_loader):
@@ -161,13 +192,11 @@ for epoch in range(num_epochs):
 
         # break
 
-    train_loss = running_loss / len(train_loader.dataset)
-    
-    # Evaluate on test set
-    test_loss = evaluate_model(model, test_loader, criterion)
+    train_loss, train_accuracy = evaluate_model(model, train_loader, criterion)
+    test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
 
     # Print both training and test loss
-    print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:}, Test Loss: {test_loss:}')
+    print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:}, Train Acc: {train_accuracy:}, Test Loss: {test_loss:}, Test Acc: {test_accuracy:}')
 
     # Save model every 10 epochs
     if (epoch + 1) % 10 == 0:
