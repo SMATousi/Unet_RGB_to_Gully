@@ -138,6 +138,8 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
             total_recall += recall
             total_f1 += f1
 
+            break
+
     avg_loss = total_loss / num_batches
     avg_precision = total_precision / num_batches
     avg_recall = total_recall / num_batches
@@ -149,7 +151,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 
 def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
     model.eval()
-    images, gt_masks, pred_masks = [], [], []
+    gt_masks, pred_masks = [], []
     with torch.no_grad():
         for i, (inputs, targets) in enumerate(dataloader):
             if i >= num_samples:
@@ -158,29 +160,27 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
             outputs = model(inputs)
             preds = outputs.sigmoid() > 0.5
 
-            images.append(inputs.cpu())
             gt_masks.append(targets.cpu())
             pred_masks.append(preds.cpu())
 
     for idx in range(num_samples):
-        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-        axs[0].imshow(images[idx].squeeze().permute(1, 2, 0))  # Assuming the input is Channels x Height x Width
-        axs[0].set_title('Input Image')
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+        
+        axs[0].imshow(gt_masks[idx].squeeze(), cmap='gray')
+        axs[0].set_title('Ground Truth Mask')
         axs[0].axis('off')
 
-        axs[1].imshow(gt_masks[idx].squeeze(), cmap='gray')
-        axs[1].set_title('Ground Truth Mask')
+        axs[1].imshow(pred_masks[idx].squeeze(), cmap='gray')
+        axs[1].set_title('Predicted Mask')
         axs[1].axis('off')
-
-        axs[2].imshow(pred_masks[idx].squeeze(), cmap='gray')
-        axs[2].set_title('Predicted Mask')
-        axs[2].axis('off')
 
         plt.tight_layout()
         fig.suptitle(f'Epoch {epoch} - Sample {idx + 1}', fontsize=16)
         plt.subplots_adjust(top=0.88)
 
         # Save the figure
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         plt.savefig(f'{save_dir}/epoch_{epoch}_sample_{idx + 1}.png')
         plt.close()
 
