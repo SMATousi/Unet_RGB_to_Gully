@@ -95,8 +95,8 @@ class UNet(nn.Module):
 def calculate_precision_recall_f1(preds, targets):
     # Calculate True Positives (TP), False Positives (FP), and False Negatives (FN)
     TP = (preds * targets).sum().float()
-    FP = ((~targets) * preds).sum().float()
-    FN = (targets * (~preds)).sum().float()
+    FP = ((logical_not(targets)) * preds).sum().float()
+    FN = (targets * (logical_not(preds))).sum().float()
 
     # Calculate Precision, Recall, and F1 score
     precision = TP / (TP + FP) if (TP + FP) > 0 else 0
