@@ -158,19 +158,25 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
                 break
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
-            preds = outputs.sigmoid() > 0.5
+            preds = (outputs.sigmoid() > 0.5).float()  # Get the predictions as 0 or 1
 
-            gt_masks.append(targets.cpu())
-            pred_masks.append(preds.cpu())
+            # Squeeze the masks to remove the channel dimension if it is 1
+            gt_mask = targets.squeeze(1).cpu()  # Assuming the channel dimension is at index 1
+            pred_mask = preds.squeeze(1).cpu()  # Assuming the channel dimension is at index 1
+
+            gt_masks.append(gt_mask)
+            pred_masks.append(pred_mask)
 
     for idx in range(num_samples):
         fig, axs = plt.subplots(1, 2, figsize=(10, 5))
         
-        axs[0].imshow(gt_masks[idx].squeeze(), cmap='gray')
+        # Display the ground truth mask
+        axs[0].imshow(gt_masks[idx].squeeze(), cmap='gray')  # Further squeeze to remove any extra dimensions
         axs[0].set_title('Ground Truth Mask')
         axs[0].axis('off')
 
-        axs[1].imshow(pred_masks[idx].squeeze(), cmap='gray')
+        # Display the predicted mask
+        axs[1].imshow(pred_masks[idx].squeeze(), cmap='gray')  # Further squeeze to remove any extra dimensions
         axs[1].set_title('Predicted Mask')
         axs[1].axis('off')
 
