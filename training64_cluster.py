@@ -151,44 +151,46 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 
 def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
     model.eval()
-    gt_masks, pred_masks = [], []
+    sample_count = 0
     with torch.no_grad():
-        for i, (inputs, targets) in enumerate(dataloader):
-            if i >= num_samples:
-                break
+        for inputs, targets in dataloader:
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             preds = (outputs.sigmoid() > 0.5).float()  # Get the predictions as 0 or 1
 
-            # Squeeze the masks to remove the channel dimension if it is 1
-            gt_mask = targets.squeeze(1).cpu()  # Assuming the channel dimension is at index 1
-            pred_mask = preds.squeeze(1).cpu()  # Assuming the channel dimension is at index 1
+            for i in range(inputs.size(0)):  # Iterate through each sample in the batch
+                if sample_count >= num_samples:
+                    break
 
-            gt_masks.append(gt_mask)
-            pred_masks.append(pred_mask)
+                gt_mask = targets[i].squeeze().cpu()  # Assuming the unwanted dimension is already removed
+                pred_mask = preds[i].squeeze().cpu()  # Assuming the unwanted dimension is already removed
 
-    for idx in range(num_samples):
-        fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-        
-        # Display the ground truth mask
-        axs[0].imshow(gt_masks[idx].squeeze(), cmap='gray')  # Further squeeze to remove any extra dimensions
-        axs[0].set_title('Ground Truth Mask')
-        axs[0].axis('off')
+                fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
-        # Display the predicted mask
-        axs[1].imshow(pred_masks[idx].squeeze(), cmap='gray')  # Further squeeze to remove any extra dimensions
-        axs[1].set_title('Predicted Mask')
-        axs[1].axis('off')
+                # Display the ground truth mask
+                axs[0].imshow(gt_mask, cmap='gray')
+                axs[0].set_title('Ground Truth Mask')
+                axs[0].axis('off')
 
-        plt.tight_layout()
-        fig.suptitle(f'Epoch {epoch} - Sample {idx + 1}', fontsize=16)
-        plt.subplots_adjust(top=0.88)
+                # Display the predicted mask
+                axs[1].imshow(pred_mask, cmap='gray')
+                axs[1].set_title('Predicted Mask')
+                axs[1].axis('off')
 
-        # Save the figure
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        plt.savefig(f'{save_dir}/epoch_{epoch}_sample_{idx + 1}.png')
-        plt.close()
+                plt.tight_layout()
+                fig.suptitle(f'Epoch {epoch} - Sample {sample_count + 1}', fontsize=16)
+                plt.subplots_adjust(top=0.88)
+
+                # Save the figure
+                if not os.path.exists(save_dir):
+                    os.makedirs(save_dir)
+                plt.savefig(f'{save_dir}/epoch_{epoch}_sample_{sample_count + 1}.png')
+                plt.close()
+
+                sample_count += 1
+
+            if sample_count >= num_samples:
+                break
 
 # Initializing the WANDB
 
