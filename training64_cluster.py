@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
+from torchmetrics import Precision, Recall, F1Score
 from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
@@ -92,31 +93,40 @@ class UNet(nn.Module):
         return logits
 
 
-def evaluate_model(model, dataloader, criterion):
-    print("-------- Evaluation ---------")
+def evaluate_model(model, dataloader, criterion, threshold=0.5):
+    print("-------- Evaluation -----------")
     model.eval()
     total_loss = 0
-    correct_pixels = 0
-    total_pixels = 0
+
+    # Define metrics
+    precision_metric = Precision(threshold=threshold).to(device)
+    recall_metric = Recall(threshold=threshold).to(device)
+    f1_metric = F1Score(threshold=threshold).to(device)
+
     with torch.no_grad():
         for inputs, targets in tqdm(dataloader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
-
-            # Assuming outputs are raw logits, apply a threshold or argmax to convert to binary or categorical mask
-            # e.g., preds = torch.argmax(outputs, dim=1) if your data is categorical
-            preds = outputs > 0.5 if outputs.shape[1] == 1 else torch.argmax(outputs, dim=1)  # binary or categorical
+            
+            # Convert outputs to binary mask
+            preds = outputs.sigmoid() > threshold  # Use sigmoid if the output is not a probability yet
 
             # Calculate loss
             loss = criterion(outputs, targets)
             total_loss += loss.item() * inputs.size(0)
 
-            # Calculate accuracy
-            correct_pixels += (preds == targets).sum().item()
-            total_pixels += targets.nelement()
+            # Update metrics
+            precision_metric.update(preds.int(), targets.int())
+            recall_metric.update(preds.int(), targets.int())
+            f1_metric.update(preds.int(), targets.int())
 
-    accuracy = correct_pixels / total_pixels
-    return total_loss / len(dataloader.dataset), accuracy
+    # Compute the metrics
+    precision = precision_metric.compute()
+    recall = recall_metric.compute()
+    f1_score = f1_metric.compute()
+
+    return total_loss / len(dataloader.dataset), precision.item(), recall.item(), f1_score.item()
+
 
 # Initializing the WANDB
 
@@ -192,11 +202,15 @@ for epoch in range(num_epochs):
 
         # break
 
-    train_loss, train_accuracy = evaluate_model(model, train_loader, criterion)
-    test_loss, test_accuracy = evaluate_model(model, test_loader, criterion)
+    train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion)
+    test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion)
 
     # Print both training and test loss
-    print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {train_loss:}, Train Acc: {train_accuracy:}, Test Loss: {test_loss:}, Test Acc: {test_accuracy:}')
+    print(f'Epoch {epoch+1}/{num_epochs}, '
+          f'Train Loss: {train_loss:}, '
+          f'Train Precision: {train_precision:}, Train Recall: {train_recall:}, Train F1: {train_f1:}, '
+          f'Test Loss: {test_loss:}, '
+          f'Test Precision: {test_precision:}, Test Recall: {test_recall:}, Test F1: {test_f1:}')
 
     # Save model every 10 epochs
     if (epoch + 1) % 10 == 0:
