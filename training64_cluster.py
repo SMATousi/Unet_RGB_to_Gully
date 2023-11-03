@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
+from torchmetrics import Precision, Recall, F1Score
 from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
@@ -148,56 +149,48 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
 
 
 def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
-    model.eval()  # Set the model to evaluation mode
-    seen_samples = set()  # A set to keep track of seen samples
+    model.eval()
+    sample_count = 0
+    fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))  # 5 is an arbitrary height multiplier for visibility
 
-    # Initialize a figure with a grid of subplots
-    fig, axs = plt.subplots(num_samples, 2, figsize=(10, 2 * num_samples))
-    
-    with torch.no_grad():  # No gradient is needed
-        for inputs, targets in dataloader:
+    with torch.no_grad():
+        for batch_idx, (inputs, targets) in enumerate(dataloader):
+            if sample_count >= num_samples:
+                break  # Break if we have already reached the desired number of samples
+
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
-            preds = (outputs.sigmoid() > 0.5).float()  # Convert model output to binary mask
+            preds = torch.sigmoid(outputs) > 0.5  # Apply threshold to get binary mask
 
-            for idx in range(inputs.size(0)):
-                # Convert the ground truth to a hashable type to check if we've seen it before
-                gt_hashable = tuple(map(tuple, targets[idx].cpu().numpy().flatten()))
-                if gt_hashable in seen_samples:
-                    continue  # Skip if we've seen this sample before
+            # for i in range(inputs.shape[0]):  # Loop over each image in the batch
+            #     if sample_count >= num_samples:
+            #         break  # Break if we have already reached the desired number of samples
 
-                # Plot the ground truth
-                axs[idx, 0].imshow(targets[idx].squeeze().cpu(), cmap='gray')
-                axs[idx, 0].title.set_text('Ground Truth')
-                axs[idx, 0].axis('off')
+            # Access the i-th sample in the batch for both ground truth and prediction
+            gt_mask = targets[0].squeeze().cpu().numpy()  # Convert to NumPy array for plotting
+            pred_mask = preds[0].squeeze().cpu().numpy()
 
-                # Plot the prediction
-                axs[idx, 1].imshow(preds[idx].squeeze().cpu(), cmap='gray')
-                axs[idx, 1].title.set_text('Prediction')
-                axs[idx, 1].axis('off')
+            axs[sample_count, 0].imshow(gt_mask, cmap='gray')
+            axs[sample_count, 0].set_title(f'Sample {sample_count + 1} Ground Truth')
+            axs[sample_count, 0].axis('off')
 
-                seen_samples.add(gt_hashable)  # Add this sample to the seen set
-                
-                # Stop if we have enough samples
-                if len(seen_samples) == num_samples:
-                    break
+            axs[sample_count, 1].imshow(pred_mask, cmap='gray')
+            axs[sample_count, 1].set_title(f'Sample {sample_count + 1} Prediction')
+            axs[sample_count, 1].axis('off')
 
-            # Stop the outer loop if we have enough samples
-            if len(seen_samples) == num_samples:
-                break
+            sample_count += 1  # Increment the sample counter
 
-    # Adjust the layout of the figure
+    # Adjust layout and save the figure
     plt.tight_layout()
-    plt.subplots_adjust(top=0.95)
+    plt.suptitle(f'Comparison for Epoch {epoch}', fontsize=16)
+    plt.subplots_adjust(top=0.9)  # Adjust the top spacing to accommodate the suptitle
 
-    # Create the directory if it doesn't exist
-    os.makedirs(save_dir, exist_ok=True)
-    
-    # Save the figure
-    fig.savefig(f"{save_dir}/comparison_epoch_{epoch}.png")
+    figure_path = os.path.join(save_dir, f'epoch_{epoch}_comparison.png')
+    os.makedirs(save_dir, exist_ok=True)  # Ensure the save directory exists
+    plt.savefig(figure_path)
     wandb.log({f'Images/epoch_{epoch}': wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
-    plt.close(fig)  # Close the figure to free memory
 
+    plt.close()
 
 # def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
 #     model.eval()
