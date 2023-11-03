@@ -237,7 +237,7 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
 
 wandb.init(
     # set the wandb project where this run will be logged
-    project="Gully-detection-64-Unet", name="batch-4-Run-1"
+    project="Gully-detection-64-Unet", name="batch-8-Run-2"
     
     # track hyperparameters and run metadata
 #     config={
@@ -268,8 +268,8 @@ train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False)
 
 
 # Create a DataLoader
@@ -323,7 +323,7 @@ for epoch in range(num_epochs):
     wandb.log({"Train/train_loss": train_loss, "Train/train_precision": train_precision, "Train/train_recall": train_recall, "Train/train_f1": train_f1})
     wandb.log({"Test/test_loss": test_loss, "Test/test_precision": test_precision, "Test/test_recall": test_recall, "Test/test_f1": test_f1})
     # Save model every 10 epochs
-    if (epoch + 1) % 1 == 0:
+    if (epoch + 1) % 10 == 0:
         torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
         save_comparison_figures(model, test_loader, epoch + 1, device)
         print(f'Model saved and comparison figures generated for Epoch {epoch + 1}.')
