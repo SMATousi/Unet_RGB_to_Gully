@@ -149,7 +149,7 @@ def main():
         # Save model every 10 epochs
         if (epoch + 1) % arg_savingstep == 0:
             torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
-            artifact = wandb.Artifact(f'./model_epoch_{epoch+1}', type='model')
+            artifact = wandb.Artifact(f'model_epoch_{epoch+1}', type='model')
             artifact.add_file(f'./model_epoch_{epoch+1}.pth')
             wandb.log(artifact)
             save_comparison_figures(model, test_loader, epoch + 1, device)
