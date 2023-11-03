@@ -148,7 +148,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
     return avg_loss, avg_precision, avg_recall, avg_f1
 
 
-def save_comparison_figure(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
+def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
     model.eval()
     sample_count = 0
     fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))  # 5 is an arbitrary height multiplier for visibility
