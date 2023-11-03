@@ -138,7 +138,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
             total_recall += recall
             total_f1 += f1
 
-            break
+            # break
 
     avg_loss = total_loss / num_batches
     avg_precision = total_precision / num_batches
@@ -238,7 +238,7 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
 
 wandb.init(
     # set the wandb project where this run will be logged
-    project="Gully-detection-64-Unet", name="batch-4-TestRun"
+    project="Gully-detection-64-Unet", name="batch-4-Run-1"
     
     # track hyperparameters and run metadata
 #     config={
@@ -291,7 +291,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 print("Model is created ...")
 
 # Training loop
-num_epochs = 50
+num_epochs = 500
 for epoch in range(num_epochs):
     print("--------- Training ------------")
     model.train()
@@ -310,7 +310,7 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item() * inputs.size(0)
 
-        break
+        # break
 
     train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion)
     test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion)
