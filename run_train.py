@@ -140,6 +140,7 @@ def main():
     print('Finished Training')
 
 
-
+if __name__ == "__main__":
+    main()
 
 
