@@ -160,24 +160,22 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
             outputs = model(inputs)
             preds = (outputs.sigmoid() > 0.5).float()  # Get the predictions as 0 or 1
 
-            for i in range(inputs.size(0)):
-                if sample_count >= num_samples:
-                    break
 
-                gt_mask = targets[i].squeeze().cpu()  # Assuming the unwanted dimension is already removed
-                pred_mask = preds[i].squeeze().cpu()  # Assuming the unwanted dimension is already removed
 
-                # Ground truth mask subplot
-                axs[sample_count, 0].imshow(gt_mask, cmap='gray')
-                axs[sample_count, 0].set_title(f'Epoch {epoch} - GT Sample {sample_count + 1}')
-                axs[sample_count, 0].axis('off')
+            gt_mask = targets[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
+            pred_mask = preds[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
 
-                # Predicted mask subplot
-                axs[sample_count, 1].imshow(pred_mask, cmap='gray')
-                axs[sample_count, 1].set_title(f'Epoch {epoch} - Pred Sample {sample_count + 1}')
-                axs[sample_count, 1].axis('off')
+            # Ground truth mask subplot
+            axs[sample_count, 0].imshow(gt_mask, cmap='gray')
+            axs[sample_count, 0].set_title(f'Epoch {epoch} - GT Sample {sample_count + 1}')
+            axs[sample_count, 0].axis('off')
 
-                sample_count += 1
+            # Predicted mask subplot
+            axs[sample_count, 1].imshow(pred_mask, cmap='gray')
+            axs[sample_count, 1].set_title(f'Epoch {epoch} - Pred Sample {sample_count + 1}')
+            axs[sample_count, 1].axis('off')
+
+            sample_count += 1
 
             if sample_count >= num_samples:
                 break
@@ -190,7 +188,7 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     plt.savefig(f'{save_dir}/epoch_{epoch}_comparison.png')
-    wandb.log({"Images/epoch_{epoch}": wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
+    wandb.log({f'Images/epoch_{epoch}': wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
     plt.close()
 
 # Initializing the WANDB
