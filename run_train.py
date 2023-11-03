@@ -151,7 +151,7 @@ def main():
             torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
             artifact = wandb.Artifact(f'model_epoch_{epoch+1}', type='model')
             artifact.add_file(f'./model_epoch_{epoch+1}.pth')
-            wandb.log(artifact)
+            wandb.log_artifact(artifact)
             save_comparison_figures(model, test_loader, epoch + 1, device)
             print(f'Model saved and comparison figures generated for Epoch {epoch + 1}.')
 
