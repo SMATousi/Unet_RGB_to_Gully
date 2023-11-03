@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--batchsize", type=int, default=4)
     parser.add_argument("--savingstep", type=int, default=10)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--nottest", type=bool, default=True)
+    parser.add_argument("--nottest", help="Enable verbose mode", action="store_true")
 
     args = parser.parse_args()
 
@@ -39,7 +39,13 @@ def main():
     arg_projectname = args.projectname
     arg_modelname = args.modelname
     arg_savingstep = args.savingstep
-    arg_nottest = args.nottest
+
+    if args.nottest:
+        arg_nottest = True 
+    else:
+        arg_nottest = False
+
+
     print(arg_nottest)
 
     args = parser.parse_args()
@@ -124,11 +130,13 @@ def main():
 
             running_loss += loss.item() * inputs.size(0)
 
-            if not arg_nottest:
+            if arg_nottest:
+                continue
+            else:
                 break
 
-        train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion, nottest=args.nottest)
-        test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion, nottest=args.nottest)
+        train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion, nottest=arg_nottest)
+        test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion, nottest=arg_nottest)
 
         # Print both training and test loss
         print(f'Epoch {epoch+1}/{num_epochs}, '
