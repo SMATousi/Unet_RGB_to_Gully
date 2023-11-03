@@ -138,7 +138,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
             total_recall += recall
             total_f1 += f1
 
-            # break
+            break
 
     avg_loss = total_loss / num_batches
     avg_precision = total_precision / num_batches
@@ -190,7 +190,7 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     plt.savefig(f'{save_dir}/epoch_{epoch}_comparison.png')
-    wandb.log({"Images/epoch_{epoch}": wandb.Image('{save_dir}/epoch_{epoch}_comparison.png')})
+    wandb.log({"Images/epoch_{epoch}": wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
     plt.close()
 
 # Initializing the WANDB
@@ -269,7 +269,7 @@ for epoch in range(num_epochs):
 
         running_loss += loss.item() * inputs.size(0)
 
-        # break
+        break
 
     train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion)
     test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion)
@@ -281,7 +281,7 @@ for epoch in range(num_epochs):
           f'Test Loss: {test_loss:}, '
           f'Test Precision: {test_precision:}, Test Recall: {test_recall:}, Test F1: {test_f1:}')
     wandb.log({"Train/train_loss": train_loss, "Train/train_precision": train_precision, "Train/train_recall": train_recall, "Train/train_f1": train_f1})
-    wandb.log({"Test/train_loss": test_loss, "Test/train_precision": test_precision, "Test/train_recall": test_recall, "Test/train_f1": test_f1})
+    wandb.log({"Test/test_loss": test_loss, "Test/test_precision": test_precision, "Test/test_recall": test_recall, "Test/test_f1": test_f1})
     # Save model every 10 epochs
     if (epoch + 1) % 1 == 0:
         torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
