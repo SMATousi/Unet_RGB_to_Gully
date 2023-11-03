@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import os
 import glob
 import wandb
-from model.py import *
+from model import *
 import argparse
 import random
 import numpy as np
