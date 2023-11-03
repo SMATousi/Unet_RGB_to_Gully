@@ -21,8 +21,9 @@ def main():
     parser.add_argument("--projectname", type=str, required=True)
     parser.add_argument("--modelname", type=str, required=True)
     parser.add_argument("--batchsize", type=int, default=4)
+    parser.add_argument("--savingstep", type=int, default=10)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--nottest", help="Enable verbose mode", action="store_true")
+    parser.add_argument("--nottest", type=bool, default=True)
 
     args = parser.parse_args()
 
@@ -31,6 +32,7 @@ def main():
     arg_runname = args.runname
     arg_projectname = args.projectname
     arg_modelname = args.modelname
+    arg_savingstep = args.savingstep
 
     args = parser.parse_args()
 
@@ -129,7 +131,7 @@ def main():
         wandb.log({"Train/train_loss": train_loss, "Train/train_precision": train_precision, "Train/train_recall": train_recall, "Train/train_f1": train_f1})
         wandb.log({"Test/test_loss": test_loss, "Test/test_precision": test_precision, "Test/test_recall": test_recall, "Test/test_f1": test_f1})
         # Save model every 10 epochs
-        if (epoch + 1) % 10 == 0:
+        if (epoch + 1) % arg_savingstep == 0:
             torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
             artifact = wandb.Artifact(f'./model_epoch_{epoch+1}', type='model')
             artifact.add_file(f'./model_epoch_{epoch+1}.pth')
