@@ -11,3 +11,9 @@ import glob
 import wandb
 from model.py import *
 import argparse
+import random
+import numpy as np
+
+torch.manual_seed(1234)
+random.seed(1234)
+np.random.seed(1234)

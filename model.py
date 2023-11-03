@@ -8,6 +8,12 @@ import matplotlib.pyplot as plt
 import os
 import glob
 import wandb
+import random
+import numpy as np
+
+torch.manual_seed(1234)
+random.seed(1234)
+np.random.seed(1234)
 
 class RGBStreamOrderDataset(Dataset):
     def __init__(self, input_dir, target_dir, transform=None):

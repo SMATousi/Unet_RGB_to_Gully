@@ -11,6 +11,12 @@ import glob
 import wandb
 from model import *
 import argparse
+import random
+import numpy as np
+
+torch.manual_seed(1234)
+random.seed(1234)
+np.random.seed(1234)
 
 def main():
 
@@ -33,6 +39,8 @@ def main():
     arg_projectname = args.projectname
     arg_modelname = args.modelname
     arg_savingstep = args.savingstep
+    arg_nottest = args.nottest
+    print(arg_nottest)
 
     args = parser.parse_args()
 
@@ -116,7 +124,7 @@ def main():
 
             running_loss += loss.item() * inputs.size(0)
 
-            if not args.nottest:
+            if not arg_nottest:
                 break
 
         train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion, nottest=args.nottest)
