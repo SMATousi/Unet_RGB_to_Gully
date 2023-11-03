@@ -47,6 +47,7 @@ run = wandb.init()
 
 artifact = run.use_artifact('tousi-team/test1/model_epoch_1:v0', type='model')
 artifact_dir = artifact.download()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if arg_modelname == 'Unet':
         model = UNet(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
