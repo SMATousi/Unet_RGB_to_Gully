@@ -56,7 +56,7 @@ if arg_modelname == 'Unet':
     
 
 print(artifact_dir)
-model.load_state_dict(torch.load(artifact_dir+f'/'{args.modelpath}))
+model.load_state_dict(torch.load(artifact_dir+f'/{args.modelpath}'))
 
 
 print("S!")
