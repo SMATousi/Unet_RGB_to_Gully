@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-from torchmetrics import Precision, Recall, F1Score
 from torchvision import transforms
 from PIL import Image
 from tqdm import tqdm
