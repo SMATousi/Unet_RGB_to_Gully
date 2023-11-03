@@ -21,8 +21,10 @@ np.random.seed(1234)
 parser = argparse.ArgumentParser(description="A script with argparse options")
 
 # Add an argument for an integer option
-parser.add_argument("--runname", type=str, required=True)
-parser.add_argument("--projectname", type=str, required=True)
+parser.add_argument("--runname", type=str, required=False)
+parser.add_argument("--projectname", type=str, required=False)
+parser.add_argument("--filepath", type=str, required=False)
+parser.add_argument("--modelpath", type=str, required=False)
 parser.add_argument("--modelname", type=str, required=True)
 parser.add_argument("--batchsize", type=int, default=4)
 parser.add_argument("--savingstep", type=int, default=10)
@@ -45,7 +47,7 @@ else:
 
 run = wandb.init()
 
-artifact = run.use_artifact('tousi-team/test1/model_epoch_1:v0', type='model')
+artifact = run.use_artifact(args.filepath, type='model')
 artifact_dir = artifact.download()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -54,7 +56,7 @@ if arg_modelname == 'Unet':
     
 
 print(artifact_dir)
-# model.load_state_dict(artifact_dir)
+model.load_state_dict(torch.load(artifact_dir+f'/'{args.modelpath}))
 
 
 print("S!")
