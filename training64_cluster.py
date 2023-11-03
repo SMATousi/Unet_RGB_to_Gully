@@ -148,7 +148,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
     return avg_loss, avg_precision, avg_recall, avg_f1
 
 
-def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
+def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=4):
     model.eval()
     sample_count = 0
     fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))  # 5 is an arbitrary height multiplier for visibility
@@ -167,8 +167,8 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
             #         break  # Break if we have already reached the desired number of samples
 
             # Access the i-th sample in the batch for both ground truth and prediction
-            gt_mask = targets[0].squeeze().cpu().numpy()  # Convert to NumPy array for plotting
-            pred_mask = preds[0].squeeze().cpu().numpy()
+            gt_mask = targets[sample_count].squeeze().cpu().numpy()  # Convert to NumPy array for plotting
+            pred_mask = preds[sample_count].squeeze().cpu().numpy()
 
             axs[sample_count, 0].imshow(gt_mask, cmap='gray')
             axs[sample_count, 0].set_title(f'Sample {sample_count + 1} Ground Truth')
