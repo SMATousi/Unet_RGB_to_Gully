@@ -148,48 +148,91 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5):
     return avg_loss, avg_precision, avg_recall, avg_f1
 
 
-
-def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
+def save_comparison_figure(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
     model.eval()
     sample_count = 0
-    fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 2))  # Adjust the figure size as needed
+    fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))  # 5 is an arbitrary height multiplier for visibility
 
     with torch.no_grad():
-        for inputs, targets in dataloader:
+        for batch_idx, (inputs, targets) in enumerate(dataloader):
+            if sample_count >= num_samples:
+                break  # Break if we have already reached the desired number of samples
+
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
-            preds = (outputs.sigmoid() > 0.5).float()  # Get the predictions as 0 or 1
+            preds = torch.sigmoid(outputs) > 0.5  # Apply threshold to get binary mask
 
+            for i in range(inputs.shape[0]):  # Loop over each image in the batch
+                if sample_count >= num_samples:
+                    break  # Break if we have already reached the desired number of samples
 
+                # Access the i-th sample in the batch for both ground truth and prediction
+                gt_mask = targets[i].squeeze().cpu().numpy()  # Convert to NumPy array for plotting
+                pred_mask = preds[i].squeeze().cpu().numpy()
 
-            gt_mask = targets[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
-            pred_mask = preds[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
+                axs[sample_count, 0].imshow(gt_mask, cmap='gray')
+                axs[sample_count, 0].set_title(f'Sample {sample_count + 1} Ground Truth')
+                axs[sample_count, 0].axis('off')
 
-            # Ground truth mask subplot
-            axs[sample_count, 0].imshow(gt_mask, cmap='gray')
-            axs[sample_count, 0].set_title(f'Epoch {epoch} - GT Sample {sample_count + 1}')
-            axs[sample_count, 0].axis('off')
+                axs[sample_count, 1].imshow(pred_mask, cmap='gray')
+                axs[sample_count, 1].set_title(f'Sample {sample_count + 1} Prediction')
+                axs[sample_count, 1].axis('off')
 
-            # Predicted mask subplot
-            axs[sample_count, 1].imshow(pred_mask, cmap='gray')
-            axs[sample_count, 1].set_title(f'Epoch {epoch} - Pred Sample {sample_count + 1}')
-            axs[sample_count, 1].axis('off')
+                sample_count += 1  # Increment the sample counter
 
-            sample_count += 1
-
-            if sample_count >= num_samples:
-                break
-
+    # Adjust layout and save the figure
     plt.tight_layout()
-    fig.suptitle(f'Comparison for Epoch {epoch}', fontsize=16)
-    plt.subplots_adjust(top=0.9)
+    plt.suptitle(f'Comparison for Epoch {epoch}', fontsize=16)
+    plt.subplots_adjust(top=0.9)  # Adjust the top spacing to accommodate the suptitle
 
-    # Save the figure
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-    plt.savefig(f'{save_dir}/epoch_{epoch}_comparison.png')
+    figure_path = os.path.join(save_dir, f'epoch_{epoch}_comparison.png')
+    os.makedirs(save_dir, exist_ok=True)  # Ensure the save directory exists
+    plt.savefig(figure_path)
     wandb.log({f'Images/epoch_{epoch}': wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
+
     plt.close()
+
+# def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=5):
+#     model.eval()
+#     sample_count = 0
+#     fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 2))  # Adjust the figure size as needed
+
+#     with torch.no_grad():
+#         for inputs, targets in dataloader:
+#             inputs, targets = inputs.to(device), targets.to(device)
+#             outputs = model(inputs)
+#             preds = (outputs.sigmoid() > 0.5).float()  # Get the predictions as 0 or 1
+
+
+
+#             gt_mask = targets[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
+#             pred_mask = preds[0].squeeze().cpu()  # Assuming the unwanted dimension is already removed
+
+#             # Ground truth mask subplot
+#             axs[sample_count, 0].imshow(gt_mask, cmap='gray')
+#             axs[sample_count, 0].set_title(f'Epoch {epoch} - GT Sample {sample_count + 1}')
+#             axs[sample_count, 0].axis('off')
+
+#             # Predicted mask subplot
+#             axs[sample_count, 1].imshow(pred_mask, cmap='gray')
+#             axs[sample_count, 1].set_title(f'Epoch {epoch} - Pred Sample {sample_count + 1}')
+#             axs[sample_count, 1].axis('off')
+
+#             sample_count += 1
+
+#             if sample_count >= num_samples:
+#                 break
+
+#     plt.tight_layout()
+#     fig.suptitle(f'Comparison for Epoch {epoch}', fontsize=16)
+#     plt.subplots_adjust(top=0.9)
+
+#     # Save the figure
+#     if not os.path.exists(save_dir):
+#         os.makedirs(save_dir)
+#     plt.savefig(f'{save_dir}/epoch_{epoch}_comparison.png')
+#     wandb.log({f'Images/epoch_{epoch}': wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
+#     plt.close()
 
 # Initializing the WANDB
 
