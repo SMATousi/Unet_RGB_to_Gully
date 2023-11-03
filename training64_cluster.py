@@ -237,7 +237,7 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
 
 wandb.init(
     # set the wandb project where this run will be logged
-    project="Gully-detection-64-Unet", name="batch-16-Run-1"
+    project="Gully-detection-64-Unet", name="BCMloss-batch-4-Run-1"
     
     # track hyperparameters and run metadata
 #     config={
@@ -268,8 +268,8 @@ train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
 train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=4, shuffle=False)
 
 
 # Create a DataLoader
@@ -284,7 +284,8 @@ print(device)
 
 # Instantiate the model
 model = UNet(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
-criterion = nn.MSELoss()  # Change loss function based on your task
+# criterion = nn.MSELoss()  # Change loss function based on your task
+criterion = nn.BCELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 print("Model is created ...")
