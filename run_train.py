@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--modelname", type=str, required=True)
     parser.add_argument("--batchsize", type=int, default=4)
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--nottest", help="Enable verbose mode", action="store_true")
+    parser.add_argument("--nottest", type=bool)
 
     args = parser.parse_args()
 
