@@ -53,8 +53,8 @@ if arg_modelname == 'Unet':
         model = UNet(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
     
 
-
-model.load_state_dict(artifact_dir)
+print(artifact_dir)
+# model.load_state_dict(artifact_dir)
 
 
 print("S!")
