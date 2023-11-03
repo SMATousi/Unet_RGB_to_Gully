@@ -285,7 +285,7 @@ print(device)
 # Instantiate the model
 model = UNet(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
 # criterion = nn.MSELoss()  # Change loss function based on your task
-criterion = nn.BCELoss()
+criterion = nn.BCEWithLogitsLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
 print("Model is created ...")
