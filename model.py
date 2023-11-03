@@ -118,6 +118,7 @@ def calculate_precision_recall_f1(preds, targets):
 
 
 def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("------ Evaluation --------")
     model.eval()
     total_loss = 0
@@ -155,6 +156,7 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
 
 
 def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=4):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
     sample_count = 0
     fig, axs = plt.subplots(num_samples, 2, figsize=(10, num_samples * 5))  # 5 is an arbitrary height multiplier for visibility
