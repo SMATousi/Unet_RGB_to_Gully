@@ -78,6 +78,32 @@ def main():
     in_dir = '/root/home/rgb_data_64/rgb_data_64/'
     tar_dir = '/root/home/rgb_data_64/so_data_64/'
 
+    
+    # Define the paths to the first and second directories
+    first_directory = tar_dir
+    second_directory = in_dir
+    
+    # List all files in the first directory
+    for root, dirs, files in os.walk(first_directory):
+        for file in files:
+            if file.startswith("tile_streamorder_") and file.endswith(".png"):
+                file_path = os.path.join(root, file)
+                img = Image.open(file_path)
+                if img.size != (64, 64):
+                    # Remove the image from the first directory
+                    os.remove(file_path)
+    
+                    # Get the image number from the filename
+                    image_number = file.split('_')[-1].split('.')[0]
+    
+                    # Remove corresponding images in the second directory
+                    for second_root, second_dirs, second_files in os.walk(second_directory):
+                        for second_file in second_files:
+                            if second_file.endswith(f"{image_number}.png"):
+                                second_file_path = os.path.join(second_root, second_file)
+                                os.remove(second_file_path)
+    print("Done!")
+
     dataset = RGBStreamOrderDataset(input_dir=in_dir, target_dir=tar_dir, transform=transform)
 
 
