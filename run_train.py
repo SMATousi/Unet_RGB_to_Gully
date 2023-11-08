@@ -10,6 +10,7 @@ import os
 import glob
 import wandb
 from model import *
+from Uformer_model import *
 import argparse
 import random
 import numpy as np
@@ -130,6 +131,8 @@ def main():
         model = UNet_1(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
     if arg_modelname == 'Unet_2':
         model = UNet_2(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
+    if arg_modelname == 'Uformer':
+        model = Uformer(img_size=64,embed_dim=32,win_size=8,in_chans=1,dd_in=18,token_projection='linear',token_mlp='leff',modulator=False)
     
     # criterion = nn.MSELoss()  # Change loss function based on your task
     criterion = nn.BCEWithLogitsLoss()
