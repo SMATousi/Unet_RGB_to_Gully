@@ -126,8 +126,10 @@ def main():
     print(device)
 
     # Instantiate the model
-    if arg_modelname == 'Unet':
-        model = UNet(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
+    if arg_modelname == 'Unet_1':
+        model = UNet_1(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
+    if arg_modelname == 'Unet_2':
+        model = UNet_2(n_channels=18, n_classes=1).to(device)  # Change n_classes based on your output
     
     # criterion = nn.MSELoss()  # Change loss function based on your task
     criterion = nn.BCEWithLogitsLoss()
