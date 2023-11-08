@@ -31,19 +31,26 @@ class RGBStreamOrderDataset(Dataset):
 
     def __getitem__(self, idx):
         # Base filename without the channel and extension
-        base_filename = self.input_files[idx].rsplit('_', 1)[0]
+        base_filename = self.input_files[idx].rsplit('_', 1)[1]
+        # print(base_filename)
 
         # Stack the RGB images to form an input with 18 channels
-        input_images = [Image.open(f"{base_filename}_{channel}.png") for channel in range(1, 7)]
+        input_images = [Image.open(f"{self.input_dir}/tile_{channel}_{base_filename}") for channel in range(1, 7)]
+#         print(len(input_images))
         input_stack = [self.transform(img) for img in input_images]
         input_tensor = torch.cat(input_stack, dim=0)  # Concatenate along the channel dimension
+#         print(input_tensor.shape)
 
         # Corresponding stream order file
-        stream_order_filename = os.path.join(self.target_dir, f"tile_streamorder_{base_filename.split('_')[-1]}.png")
+        stream_order_filename = os.path.join(self.target_dir, f"tile_streamorder_{base_filename}")
         stream_order_image = Image.open(stream_order_filename)
         
         if self.transform is not None:
             stream_order_image = self.transform(stream_order_image)
+
+        # Print the image paths for debugging
+#         print(f"Loaded Input Image: {self.input_files[idx]}")
+#         print(f"Loaded Stream Order Image: {stream_order_filename}")
         
         return input_tensor, stream_order_image
 
