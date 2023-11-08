@@ -78,7 +78,7 @@ class RGBStreamOrderDataset(Dataset):
 
 class UNet_1(nn.Module):
     def __init__(self, n_channels, n_classes):
-        super(UNet, self).__init__()
+        super(UNet_1, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
 
@@ -109,7 +109,7 @@ class UNet_1(nn.Module):
 
 class UNet_2(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=False):
-        super(UNet, self).__init__()
+        super(UNet_2, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
