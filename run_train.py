@@ -79,31 +79,39 @@ def main():
     in_dir = '/root/home/rgb_data_64/rgb_data_64/'
     tar_dir = '/root/home/rgb_data_64/so_data_64/'
 
+        
+    # Define the paths to the streamorder and rgb directories
+    streamorder_directory = '/root/home/rgb_data_64/so_data_64/'
+    rgb_directory = '/root/home/rgb_data_64/rgb_data_64/'
     
-    # Define the paths to the first and second directories
-    first_directory = tar_dir
-    second_directory = in_dir
+    def remove_mismatched_images(directory, associated_directory, file_prefix):
+        # List all files in the directory
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.startswith(file_prefix) and file.endswith(".png"):
+                    file_path = os.path.join(root, file)
+                    img = Image.open(file_path)
+                    if img.size != (64, 64):
+                        # Remove the image from the current directory
+                        os.remove(file_path)
     
-    # List all files in the first directory
-    for root, dirs, files in os.walk(first_directory):
-        for file in files:
-            if file.startswith("tile_streamorder_") and file.endswith(".png"):
-                file_path = os.path.join(root, file)
-                img = Image.open(file_path)
-                if img.size != (64, 64):
-                    # Remove the image from the first directory
-                    os.remove(file_path)
+                        # Get the image number from the filename
+                        image_number = file.split('_')[-1].split('.')[0]
     
-                    # Get the image number from the filename
-                    image_number = file.split('_')[-1].split('.')[0]
+                        # Remove corresponding images in the associated directory
+                        for assoc_root, assoc_dirs, assoc_files in os.walk(associated_directory):
+                            for assoc_file in assoc_files:
+                                if assoc_file.endswith(f"{image_number}.png"):
+                                    assoc_file_path = os.path.join(assoc_root, assoc_file)
+                                    os.remove(assoc_file_path)
     
-                    # Remove corresponding images in the second directory
-                    for second_root, second_dirs, second_files in os.walk(second_directory):
-                        for second_file in second_files:
-                            if second_file.endswith(f"{image_number}.png"):
-                                second_file_path = os.path.join(second_root, second_file)
-                                os.remove(second_file_path)
-    print("Done!")
+    # Process the streamorder directory and remove any associated images in the rgb directory
+    remove_mismatched_images(streamorder_directory, rgb_directory, "tile_streamorder_")
+    
+    # Process the rgb directory and remove any associated images in the streamorder directory
+    remove_mismatched_images(rgb_directory, streamorder_directory, "tile_")
+    
+    print("Image cleanup is done!")
 
     dataset = RGBStreamOrderDataset(input_dir=in_dir, target_dir=tar_dir, transform=transform)
 
