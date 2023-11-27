@@ -173,20 +173,22 @@ def main():
                 continue
             else:
                 break
-
-        train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion, nottest=arg_nottest)
-        test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion, nottest=arg_nottest)
-
-        # Print both training and test loss
-        print(f'Epoch {epoch+1}/{num_epochs}, '
-            f'Train Loss: {train_loss:}, '
-            f'Train Precision: {train_precision:}, Train Recall: {train_recall:}, Train F1: {train_f1:}, '
-            f'Test Loss: {test_loss:}, '
-            f'Test Precision: {test_precision:}, Test Recall: {test_recall:}, Test F1: {test_f1:}')
-        wandb.log({"Train/train_loss": train_loss, "Train/train_precision": train_precision, "Train/train_recall": train_recall, "Train/train_f1": train_f1})
-        wandb.log({"Test/test_loss": test_loss, "Test/test_precision": test_precision, "Test/test_recall": test_recall, "Test/test_f1": test_f1})
-        # Save model every 10 epochs
+        
         if (epoch + 1) % arg_savingstep == 0:
+
+            train_loss, train_precision, train_recall, train_f1 = evaluate_model(model, train_loader, criterion, nottest=arg_nottest)
+            test_loss, test_precision, test_recall, test_f1 = evaluate_model(model, test_loader, criterion, nottest=arg_nottest)
+
+            # Print both training and test loss
+            print(f'Epoch {epoch+1}/{num_epochs}, '
+                f'Train Loss: {train_loss:}, '
+                f'Train Precision: {train_precision:}, Train Recall: {train_recall:}, Train F1: {train_f1:}, '
+                f'Test Loss: {test_loss:}, '
+                f'Test Precision: {test_precision:}, Test Recall: {test_recall:}, Test F1: {test_f1:}')
+            wandb.log({"Train/train_loss": train_loss, "Train/train_precision": train_precision, "Train/train_recall": train_recall, "Train/train_f1": train_f1})
+            wandb.log({"Test/test_loss": test_loss, "Test/test_precision": test_precision, "Test/test_recall": test_recall, "Test/test_f1": test_f1})
+            # Save model every 10 epochs
+        
             torch.save(model.state_dict(), f'./model_epoch_{epoch+1}.pth')
             artifact = wandb.Artifact(f'model_epoch_{epoch+1}', type='model')
             artifact.add_file(f'./model_epoch_{epoch+1}.pth')
