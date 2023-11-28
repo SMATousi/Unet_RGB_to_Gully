@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
+from torchvision import models
 from PIL import Image
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -241,3 +242,56 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
     wandb.log({f'Images/epoch_{epoch}': wandb.Image(f'{save_dir}/epoch_{epoch}_comparison.png')})
 
     plt.close()
+
+
+class DepthNet(nn.Module):
+    def __init__(self):
+        super(DepthNet, self).__init__()
+
+        # Original encoder: Use ResNet as the encoder with pretrained weights
+        original_encoder = models.resnet18(pretrained=True)
+
+        # Modify the first convolution layer to accept 18-channel input
+        self.first_conv = nn.Conv2d(18, 64, kernel_size=7, stride=2, padding=3, bias=False)
+
+        # Copy weights from the original first layer (for the first 3 channels)
+        self.first_conv.weight.data[:, :3] = original_encoder.conv1.weight.data
+
+        # Use the rest of the layers from the original encoder
+        self.encoder_layers = nn.Sequential(
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+            *list(original_encoder.children())[4:-2]  # Exclude the original first conv layer and the fully connected layers
+        )
+        
+        self.encoder = nn.Sequential(
+            self.first_conv,
+            self.encoder_layers
+        )
+
+        # Freeze the encoder
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
+        # Decoder: A simple decoder with transpose convolutions
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(64, 64, kernel_size=2, stride=2),
+            nn.ReLU(inplace=True),
+            nn.ConvTranspose2d(64, 1, kernel_size=2, stride=2)  # Output depth map
+        )
+
+    def forward(self, x):
+        # Forward pass through the encoder
+        x = self.encoder(x)
+
+        # Forward pass through the decoder
+        x = self.decoder(x)
+        
+        return x
