@@ -8,7 +8,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
 import glob
-import wandb
+#import wandb
 from model import *
 from Uformer_model import *
 import argparse
@@ -52,9 +52,9 @@ def main():
     args = parser.parse_args()
 
     
-    wandb.init(
+#    wandb.init(
         # set the wandb project where this run will be logged
-        project=arg_projectname, name=arg_runname
+ #       project=arg_projectname, name=arg_runname
         
         # track hyperparameters and run metadata
     #     config={
@@ -63,7 +63,7 @@ def main():
     #     "dataset": "CIFAR-100",
     #     "epochs": 20,
     #     }
-    )
+  #  )
 
 
     if not os.path.exists('comparison_figures'):
@@ -76,13 +76,13 @@ def main():
     ])
 
     # Create the dataset
-    in_dir = '/root/home/rgb_data_64/rgb_data_64/'
-    tar_dir = '/root/home/rgb_data_64/so_data_64/'
+    in_dir = '/home/macula/SMATousi/Gullies/ground_truth/google_api/training_process/rgb2so/rgb_data_64/'
+    tar_dir = '/home/macula/SMATousi/Gullies/ground_truth/google_api/training_process/rgb2so/so_data_64/'
 
         
     # Define the paths to the streamorder and rgb directories
-    streamorder_directory = '/root/home/rgb_data_64/so_data_64/'
-    rgb_directory = '/root/home/rgb_data_64/rgb_data_64/'
+    streamorder_directory = '/home/macula/SMATousi/Gullies/ground_truth/google_api/training_process/rgb2so/so_data_64/'
+    rgb_directory = '/home/macula/SMATousi/Gullies/ground_truth/google_api/training_process/rgb2so/rgb_data_64/'
     
     def remove_mismatched_images(directory, associated_directory, file_prefix):
         # List all files in the directory
@@ -106,10 +106,12 @@ def main():
                                     os.remove(assoc_file_path)
     
     # Process the streamorder directory and remove any associated images in the rgb directory
-    remove_mismatched_images(streamorder_directory, rgb_directory, "tile_streamorder_")
+    # remove_mismatched_images(streamorder_directory, rgb_directory, "tile_streamorder_")
+
+    print("First Done")
     
-    # Process the rgb directory and remove any associated images in the streamorder directory
-    remove_mismatched_images(rgb_directory, streamorder_directory, "tile_")
+    # # Process the rgb directory and remove any associated images in the streamorder directory
+    # remove_mismatched_images(rgb_directory, streamorder_directory, "tile_")
     
     print("Image cleanup is done!")
 
@@ -120,7 +122,7 @@ def main():
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=arg_batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=arg_batch_size,num_workers=8, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=arg_batch_size, shuffle=True)
 
 
@@ -129,7 +131,7 @@ def main():
 
     print("Data is loaded ...")
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     # device = torch.device('cpu')
 
     print(device)
