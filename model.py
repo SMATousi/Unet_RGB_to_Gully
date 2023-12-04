@@ -168,7 +168,7 @@ def calculate_precision_recall_f1(preds, targets):
 
 
 
-def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
+def evaluate_model(model, dataloader, criterion, threshold=0.1, nottest=True):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("------ Evaluation --------")
     model.eval()
