@@ -78,7 +78,7 @@ class RGBStreamOrderDataset(Dataset):
 #         return self.double_conv(x)
 
 class UNet_1(nn.Module):
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels, n_classes, dropout_rate=0.5):
         super(UNet_1, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -94,12 +94,20 @@ class UNet_1(nn.Module):
         self.up4 = DoubleConv(128, 64)
         self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
 
+        self.dropout = nn.Dropout(dropout_rate)
+
+
+
     def forward(self, x):
         x1 = self.inc(x)
         x2 = self.down1(x1)
+        x2 = self.dropout(x2)
         x3 = self.down2(x2)
+        x3 = self.dropout(x3)
         x4 = self.down3(x3)
+        x4 = self.dropout(x4)
         x5 = self.down4(x4)
+        x5 = self.dropout(x5)
         x = self.up1(torch.cat([x4, x5], dim=1))
         x = self.up2(torch.cat([x3, x], dim=1))
         x = self.up3(torch.cat([x2, x], dim=1))
