@@ -184,8 +184,8 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
             outputs = model(inputs)
 
             # Apply sigmoid function to ensure outputs are in the probability space
-            probs = outputs.sigmoid()
-            preds = (probs > threshold).float()  # Cast to float to perform calculations
+            # probs = outputs.sigmoid()
+            preds = (outputs > threshold).float()  # Cast to float to perform calculations
 
             loss = criterion(outputs, targets)
             total_loss += loss.item()
