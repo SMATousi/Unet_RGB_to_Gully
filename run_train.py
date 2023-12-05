@@ -151,7 +151,7 @@ def main():
         
     # criterion = nn.MSELoss()  # Change loss function based on your task
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
     # scheduler = StepLR(optimizer, step_size=10, gamma=0.1)  # Reduce learning rate every 5 epochs by a factor of 0.1
 
     print("Model is created ...")
