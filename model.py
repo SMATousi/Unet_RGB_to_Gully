@@ -17,43 +17,52 @@ torch.manual_seed(1234)
 random.seed(1234)
 np.random.seed(1234)
 
+
 class RGBStreamOrderDataset(Dataset):
-    def __init__(self, input_dir, target_dir, transform=None):
+    def __init__(self, input_dir, target_dir, augment=False):
         self.input_dir = input_dir
         self.target_dir = target_dir
-        self.transform = transform
+        self.augment = augment
 
-        # List all files in the input directory
+        # Augmentation transforms
+        self.augment_transforms = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomRotation(10),
+            # transforms.RandomCrop((224, 224)),  # Example size, adjust as needed
+            transforms.ToTensor()
+        ])
+
+        # Standard transforms (without augmentation)
+        self.standard_transforms = transforms.Compose([
+            transforms.ToTensor()
+        ])
+
         self.input_files = glob.glob(os.path.join(input_dir, 'tile_1_*.png'))
-        # Sort the files to ensure alignment
         self.input_files.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
-        
+
     def __len__(self):
         return len(self.input_files)
 
     def __getitem__(self, idx):
-        # Base filename without the channel and extension
         base_filename = self.input_files[idx].rsplit('_', 1)[1]
-        # print(base_filename)
 
-        # Stack the RGB images to form an input with 18 channels
         input_images = [Image.open(f"{self.input_dir}/tile_{channel}_{base_filename}") for channel in range(1, 7)]
-#         print(len(input_images))
-        input_stack = [self.transform(img) for img in input_images]
-        input_tensor = torch.cat(input_stack, dim=0)  # Concatenate along the channel dimension
-#         print(input_tensor.shape)
+        
+        if self.augment:
+            input_stack = [self.augment_transforms(img) for img in input_images]
+        else:
+            input_stack = [self.standard_transforms(img) for img in input_images]
 
-        # Corresponding stream order file
+        input_tensor = torch.cat(input_stack, dim=0)
+
         stream_order_filename = os.path.join(self.target_dir, f"tile_streamorder_{base_filename}")
         stream_order_image = Image.open(stream_order_filename)
         
-        if self.transform is not None:
-            stream_order_image = self.transform(stream_order_image)
+        if self.augment:
+            stream_order_image = self.augment_transforms(stream_order_image)
+        else:
+            stream_order_image = self.standard_transforms(stream_order_image)
 
-        # Print the image paths for debugging
-#         print(f"Loaded Input Image: {self.input_files[idx]}")
-#         print(f"Loaded Stream Order Image: {stream_order_filename}")
-        
         return input_tensor, stream_order_image
 
 
