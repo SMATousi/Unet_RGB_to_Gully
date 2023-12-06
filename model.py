@@ -102,6 +102,7 @@ class UNet_1(nn.Module):
         self.up3 = DoubleConv(256, 64)
         self.up4 = DoubleConv(128, 64)
         self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
+        self.sigmoid_activation = nn.Sigmoid()
 
         self.dropout = nn.Dropout(dropout_rate)
 
@@ -122,6 +123,8 @@ class UNet_1(nn.Module):
         x = self.up3(torch.cat([x2, x], dim=1))
         x = self.up4(torch.cat([x1, x], dim=1))
         logits = self.outc(x)
+        # logits = self.sigmoid_activation(x)
+
         return logits
 
 
@@ -196,10 +199,13 @@ def evaluate_model(model, dataloader, criterion, threshold=0.1, nottest=True):
             # probs = outputs.sigmoid()
             preds = (outputs > threshold).float()  # Cast to float to perform calculations
 
+            targets = targets > 0
+            targets = targets.float()
+
             loss = criterion(outputs, targets)
             total_loss += loss.item()
 
-            precision, recall, f1 = calculate_precision_recall_f1(preds, targets.float())
+            precision, recall, f1 = calculate_precision_recall_f1(preds, targets)
             total_precision += precision
             total_recall += recall
             total_f1 += f1
@@ -227,8 +233,10 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
                 break  # Break if we have already reached the desired number of samples
 
             inputs, targets = inputs.to(device), targets.to(device)
+            targets = targets > 0
+            targets = targets.float()
             outputs = model(inputs)
-            preds = torch.sigmoid(outputs) > 0.5  # Apply threshold to get binary mask
+            preds = outputs > 0.5  # Apply threshold to get binary mask
 
             # for i in range(inputs.shape[0]):  # Loop over each image in the batch
             #     if sample_count >= num_samples:

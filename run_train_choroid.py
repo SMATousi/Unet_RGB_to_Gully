@@ -167,6 +167,8 @@ def main():
 
             # Forward pass
             outputs = model(inputs)
+            targets = targets > 0
+            targets = targets.float()
             loss = criterion(outputs, targets)
 
             # Backward and optimize
