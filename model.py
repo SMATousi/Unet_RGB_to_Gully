@@ -236,7 +236,8 @@ def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparis
             targets = targets > 0
             targets = targets.float()
             outputs = model(inputs)
-            preds = outputs > 0.5  # Apply threshold to get binary mask
+            probs = outputs.sigmoid()
+            preds = probs > 0.5  # Apply threshold to get binary mask
 
             # for i in range(inputs.shape[0]):  # Loop over each image in the batch
             #     if sample_count >= num_samples:
