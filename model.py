@@ -27,6 +27,7 @@ class RGBStreamOrderDataset(Dataset):
         # Augmentation transforms
         self.augment_transforms = transforms.Compose([
             transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
             transforms.RandomRotation(10),
             # transforms.RandomCrop((224, 224)),  # Example size, adjust as needed
             transforms.ToTensor()
