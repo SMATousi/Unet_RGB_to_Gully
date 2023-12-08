@@ -222,6 +222,53 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
     return avg_loss, avg_precision, avg_recall, avg_f1
 
 
+
+def evaluate_model_pet(model, dataloader, criterion, threshold=0.5, nottest=True):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("------ Evaluation --------")
+    model.eval()
+    total_loss = 0
+    total_precision = 0
+    total_recall = 0
+    total_f1 = 0
+    num_batches = len(dataloader)
+
+    with torch.no_grad():
+        for batch in tqdm(dataloader):
+#           inputs, targets = inputs.to(device), targets.to(device)
+            inputs = batch["image"].to(device)
+            targets = batch["mask"].to(device)
+            
+            inputs = inputs.float()
+            targets = targets.float()
+            
+            outputs = model(inputs)
+
+            # Apply sigmoid function to ensure outputs are in the probability space
+            probs = outputs.sigmoid()
+            preds = (outputs > threshold).float()  # Cast to float to perform calculations
+
+            targets = targets > 0
+            targets = targets.float()
+
+            loss = criterion(outputs, targets)
+            total_loss += loss.item()
+
+            precision, recall, f1 = calculate_precision_recall_f1(preds, targets)
+            total_precision += precision
+            total_recall += recall
+            total_f1 += f1
+
+            if not nottest:
+                break
+
+    avg_loss = total_loss / num_batches
+    avg_precision = total_precision / num_batches
+    avg_recall = total_recall / num_batches
+    avg_f1 = total_f1 / num_batches
+
+    return avg_loss, avg_precision, avg_recall, avg_f1
+
 def save_comparison_figures(model, dataloader, epoch, device, save_dir='comparison_figures', num_samples=4):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model.eval()
