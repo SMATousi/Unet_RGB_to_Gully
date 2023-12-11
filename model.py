@@ -67,25 +67,44 @@ class RGBStreamOrderDataset(Dataset):
         return input_tensor, stream_order_image
 
 
+class RGBGroundTruthDataset(Dataset):
+    def __init__(self, rgb_dir, gt_dir, years):
+        self.rgb_dir = rgb_dir
+        self.gt_dir = gt_dir
+        self.years = years
+        self.samples = os.listdir(gt_dir)
+        self.transform = transforms.Compose([
+            transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
+            transforms.RandomRotation(10)
+        ])
 
-# class DoubleConv(nn.Module):
-#     """(convolution => [BN] => ReLU) * 2"""
+    def __len__(self):
+        return len(self.samples)
 
-#     def __init__(self, in_channels, out_channels, mid_channels=None):
-#         super().__init__()
-#         if not mid_channels:
-#             mid_channels = out_channels
-#         self.double_conv = nn.Sequential(
-#             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1),
-#             nn.BatchNorm2d(mid_channels),
-#             nn.ReLU(inplace=True),
-#             nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
-#             nn.BatchNorm2d(out_channels),
-#             nn.ReLU(inplace=True)
-#         )
+    def __getitem__(self, idx):
+        sample_name = self.samples[idx]
 
-#     def forward(self, x):
-#         return self.double_conv(x)
+        # Load and transform RGB images for different years
+        rgb_images = []
+        for year in self.years:
+            rgb_image_name = f'rgb_{year}_{sample_name}'
+            rgb_image_path = os.path.join(self.rgb_dir, rgb_image_name)
+            if os.path.exists(rgb_image_path):
+                img = Image.open(rgb_image_path).convert('RGB')
+                img = self.transform(img)
+                img = torch.tensor(np.array(img), dtype=torch.float32).permute(2, 0, 1)
+                rgb_images.append(img)
+
+        # Load and transform ground truth image
+        gt_image = Image.open(os.path.join(self.gt_dir, sample_name))
+        gt_image = self.transform(gt_image)
+        gt_image = torch.tensor(np.array(gt_image), dtype=torch.float32)
+
+        return rgb_images, gt_image
+
+
+
 
 class UNet_1(nn.Module):
     def __init__(self, n_channels, n_classes, dropout_rate=0.5):
