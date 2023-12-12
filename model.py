@@ -84,11 +84,13 @@ class RGBGroundTruthDataset(Dataset):
 
     def __getitem__(self, idx):
         sample_name = self.samples[idx]
+        
+        numeric_part = '_'.join(sample_name.split('_')[2:])
 
         # Load and transform RGB images for different years
         rgb_images = []
         for year in self.years:
-            rgb_image_name = f'rgb_{year}_{sample_name}'
+            rgb_image_name = f'rgb_{year}_{numeric_part}'
             rgb_image_path = os.path.join(self.rgb_dir, rgb_image_name)
             if os.path.exists(rgb_image_path):
                 img = Image.open(rgb_image_path).convert('RGB')
