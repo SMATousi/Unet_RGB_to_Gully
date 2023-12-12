@@ -12,6 +12,17 @@ import wandb
 import random
 import numpy as np
 from unet_parts import *
+import numpy as np
+from PIL import Image
+from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
+import torch.optim as optim
+import torch.nn as nn
+import torch
+import torch
+import torch.nn as nn
+from torchvision.models import resnet18
+from torch.nn.functional import interpolate
 
 torch.manual_seed(1234)
 random.seed(1234)
@@ -390,3 +401,47 @@ class DepthNet(nn.Module):
         x = self.decoder(x)
         
         return x
+
+
+class SingleResNetLSTMUNet(nn.Module):
+    def __init__(self, num_classes, hidden_dim, lstm_layers):
+        super(SingleResNetLSTMUNet, self).__init__()
+        # Initialize a single ResNet model
+        self.resnet = resnet18(pretrained=True)
+        self.resnet.fc = nn.Identity()  # Remove the fully connected layer
+
+        # LSTM layer
+        self.lstm = nn.LSTM(input_size=512, hidden_size=hidden_dim, num_layers=lstm_layers, batch_first=True)
+
+        # Decoder network (a simple upsample for demonstration)
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(hidden_dim, 256, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, num_classes, kernel_size=1)
+        )
+
+    def forward(self, images):
+        # Assuming images is a list of 6 tensors of shape [batch_size, 3, 128, 128]
+        batch_size = images[0].size(0)
+
+        # Pass each image through the ResNet and collect the features
+        features = [self.resnet(image) for image in images]
+        # Convert list of tensors to a single tensor
+        features = torch.stack(features, dim=1)  # Shape: [batch_size, 6, 512]
+
+        # LSTM
+        lstm_out, _ = self.lstm(features)  # Shape: [batch_size, 6, hidden_dim]
+        lstm_out = lstm_out[:, -1, :]  # Take the output of the last time step
+
+        # Reshape for decoder
+        lstm_out = lstm_out.view(batch_size, -1, 1, 1)  # Shape: [batch_size, hidden_dim, 1, 1]
+
+        # Upsample to match the target size
+        output = self.decoder(lstm_out)
+        output = interpolate(output, size=(128, 128), mode='bilinear', align_corners=False)
+
+        return output
