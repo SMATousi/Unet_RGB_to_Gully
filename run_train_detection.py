@@ -1,5 +1,6 @@
 from model import *
 import argparse
+from tqdm import tqdm
 
 
 torch.manual_seed(1234)
