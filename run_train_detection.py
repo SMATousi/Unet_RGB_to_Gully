@@ -3,7 +3,7 @@ from model import *
 in_dir = '/root/home/128x128_raw/rgb_images/'
 tar_dir = '/root/home/128x128_raw/ground_truth/'
 
-dataset = RGBGroundTruthDataset(rgb_dir=in_dir, gt_dir=tar_dir, years=['0','1','2','3','4','5'])
+dataset = RGBGroundTruthDataset(rgb_dir=in_dir, gt_dir=tar_dir, years=['0','1','2','3','4','5'], dilation_pixels=1)
 
 train_size = int(0.8 * len(dataset))
 test_size = len(dataset) - train_size
@@ -38,8 +38,8 @@ for epoch in range(num_epochs):
 
         # Forward pass
         outputs = model(rgb_images)
-        targets = gt_image > 0
-        targets = targets.float()
+        # targets = gt_image > 0
+        # targets = targets.float()
         loss = criterion(outputs, targets)
 
         # Backward pass and optimize

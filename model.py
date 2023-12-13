@@ -23,6 +23,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet18
 from torch.nn.functional import interpolate
+import cv2
 
 torch.manual_seed(1234)
 random.seed(1234)
@@ -79,10 +80,11 @@ class RGBStreamOrderDataset(Dataset):
 
 
 class RGBGroundTruthDataset(Dataset):
-    def __init__(self, rgb_dir, gt_dir, years):
+    def __init__(self, rgb_dir, gt_dir, years, dilation_pixels=5):
         self.rgb_dir = rgb_dir
         self.gt_dir = gt_dir
         self.years = years
+        self.dilation_pixels = dilation_pixels
         self.samples = os.listdir(gt_dir)
         self.transform = transforms.Compose([
             transforms.RandomHorizontalFlip(),
@@ -95,10 +97,9 @@ class RGBGroundTruthDataset(Dataset):
 
     def __getitem__(self, idx):
         sample_name = self.samples[idx]
-        
-        numeric_part = '_'.join(sample_name.split('_')[2:])
+        numeric_part = '_'.join(sample_name.split('_')[2:])  # Extract numeric part
 
-        # Load and transform RGB images for different years
+        # Load and transform RGB images
         rgb_images = []
         for year in self.years:
             rgb_image_name = f'rgb_{year}_{numeric_part}'
@@ -109,12 +110,15 @@ class RGBGroundTruthDataset(Dataset):
                 img = torch.tensor(np.array(img), dtype=torch.float32).permute(2, 0, 1)
                 rgb_images.append(img)
 
-        # Load and transform ground truth image
-        gt_image = Image.open(os.path.join(self.gt_dir, sample_name))
-        gt_image = self.transform(gt_image)
-        gt_image = torch.tensor(np.array(gt_image), dtype=torch.float32)
+        # Load, binarize, and dilate ground truth image
+        gt_image = Image.open(os.path.join(self.gt_dir, sample_name)).convert('L')
+        gt_image = np.array(gt_image)
+        _, binary_gt_image = cv2.threshold(gt_image, 0.5, 255, cv2.THRESH_BINARY)
+        kernel = np.ones((self.dilation_pixels, self.dilation_pixels), np.uint8)
+        dilated_gt_image = cv2.dilate(binary_gt_image, kernel, iterations=1)
+        dilated_gt_image = torch.tensor(dilated_gt_image, dtype=torch.float32)
 
-        return rgb_images, gt_image
+        return rgb_images, dilated_gt_image
 
 
 
