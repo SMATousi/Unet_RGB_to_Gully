@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import resnet18
 from torch.nn.functional import interpolate
-import cv2
+import torch.nn.functional as F
 
 torch.manual_seed(1234)
 random.seed(1234)
@@ -77,8 +77,8 @@ class RGBStreamOrderDataset(Dataset):
             stream_order_image = self.standard_transforms(stream_order_image)
 
         return input_tensor, stream_order_image
-
-
+    
+    
 class RGBGroundTruthDataset(Dataset):
     def __init__(self, rgb_dir, gt_dir, years, dilation_pixels=5):
         self.rgb_dir = rgb_dir
@@ -110,15 +110,22 @@ class RGBGroundTruthDataset(Dataset):
                 img = torch.tensor(np.array(img), dtype=torch.float32).permute(2, 0, 1)
                 rgb_images.append(img)
 
-        # Load, binarize, and dilate ground truth image
+        # Load, binarize, and dilate ground truth image using PyTorch
         gt_image = Image.open(os.path.join(self.gt_dir, sample_name)).convert('L')
-        gt_image = np.array(gt_image)
-        _, binary_gt_image = cv2.threshold(gt_image, 0.5, 255, cv2.THRESH_BINARY)
-        kernel = np.ones((self.dilation_pixels, self.dilation_pixels), np.uint8)
-        dilated_gt_image = cv2.dilate(binary_gt_image, kernel, iterations=1)
-        dilated_gt_image = torch.tensor(dilated_gt_image, dtype=torch.float32)
+        gt_image = torch.tensor(np.array(gt_image), dtype=torch.float32)
+        binary_gt_image = (gt_image > 1).float()  # Binarize
+
+        # Dilate ground truth image
+        if self.dilation_pixels > 0:
+            kernel_size = self.dilation_pixels
+            kernel = torch.ones((kernel_size, kernel_size), dtype=torch.float32)
+            padding = kernel_size // 2
+            binary_gt_image = binary_gt_image.unsqueeze(0).unsqueeze(0)  # Add batch and channel dims
+            dilated_gt_image = F.conv2d(binary_gt_image, kernel.unsqueeze(0).unsqueeze(0), padding=padding) > 0
+            dilated_gt_image = dilated_gt_image.squeeze(0).squeeze(0)  # Remove batch and channel dims
 
         return rgb_images, dilated_gt_image
+
 
 
 
@@ -257,6 +264,51 @@ def evaluate_model(model, dataloader, criterion, threshold=0.5, nottest=True):
 
     return avg_loss, avg_precision, avg_recall, avg_f1
 
+
+
+
+def evaluate_model_det(model, dataloader, criterion, threshold=0.5, nottest=True):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("------ Evaluation --------")
+    model.eval()
+    total_loss = 0
+    total_precision = 0
+    total_recall = 0
+    total_f1 = 0
+    num_batches = len(dataloader)
+
+    with torch.no_grad():
+        for i, (rgb_images, gt_image) in enumerate(dataloader):
+            rgb_images = [img.to(device) for img in rgb_images]
+            gt_image = gt_image.to(device)
+            gt_image = gt_image.unsqueeze(1)
+            gt_image = gt_image.float()
+            outputs = model(rgb_images)
+
+            # Apply sigmoid function to ensure outputs are in the probability space
+            probs = outputs.sigmoid()
+            preds = (outputs > threshold).float()  # Cast to float to perform calculations
+
+#             targets = targets > 0
+#             targets = targets.float()
+
+            loss = criterion(outputs, gt_image)
+            total_loss += loss.item()
+
+            precision, recall, f1 = calculate_precision_recall_f1(preds, gt_image)
+            total_precision += precision
+            total_recall += recall
+            total_f1 += f1
+
+            if not nottest:
+                break
+
+    avg_loss = total_loss / num_batches
+    avg_precision = total_precision / num_batches
+    avg_recall = total_recall / num_batches
+    avg_f1 = total_f1 / num_batches
+
+    return avg_loss, avg_precision, avg_recall, avg_f1
 
 
 def evaluate_model_pet(model, dataloader, criterion, threshold=0.5, nottest=True):
