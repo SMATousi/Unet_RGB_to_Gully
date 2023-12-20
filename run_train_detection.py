@@ -75,7 +75,7 @@ def main():
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = SingleResNetLSTMUNet(num_classes=1, hidden_dim=6, lstm_layers=10)
+    model = SingleResNetLSTMUNet(num_classes=1, hidden_dim=512, lstm_layers=10)
     model = model.to(device)  # Assuming you have a device (like 'cuda' or 'cpu')
 
     # Loss Function
