@@ -106,7 +106,7 @@ class RGBGroundTruthDataset(Dataset):
             rgb_image_path = os.path.join(self.rgb_dir, rgb_image_name)
             if os.path.exists(rgb_image_path):
                 img = Image.open(rgb_image_path).convert('RGB')
-                img = self.transform(img)
+                # img = self.transform(img)
                 img = torch.tensor(np.array(img), dtype=torch.float32).permute(2, 0, 1)
                 rgb_images.append(img)
 
